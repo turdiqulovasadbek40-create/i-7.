@@ -4,12 +4,9 @@ from aiohttp import web
 import telebot
 from telebot import types
 
-# 1. Tokenni to'g'ridan-to'g'ri yozish yoki Environmentdan olish
+# 1. Token va Portni sozlash
 BOT_TOKEN = "8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynuc"
 PORT = int(os.environ.get("PORT", 10000))
-
-if not BOT_TOKEN:
-    raise ValueError("OШИБКА: Переменная BOT_TOKEN не найдена!")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -115,11 +112,11 @@ def run_web_server():
     app.router.add_get("/", handle_ping)
     web.run_app(app, host="0.0.0.0", port=PORT)
 
-# 5. Запуск сервера и бота (TO'G'RILANDI)
+# 5. Запуск сервера и бота
 if __name__ == "__main__":
     # Запуск веб-сервера в отдельном потоке
     server_thread = threading.Thread(target=run_web_server, daemon=True)
     server_thread.start()
 
-    print("✅ Web server и Bot успешно запущены...")
+    print("✅ Web server va Bot muvaffaqiyatli ishga tushdi...")
     bot.infinity_polling(skip_pending=True)
