@@ -1,16 +1,33 @@
-import os
-import threading
-from aiohttp import web
-import telebot
-from telebot import types
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask
+from threading import Thread
 
-# 1. Token va Portni sozlash
-BOT_TOKEN = "8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynuc"
-PORT = int(os.environ.get("PORT", 10000))
+# Bot tokeni
+TOKEN = "8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynuc"
 
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
 
-# 2. Список из 31 темы
+# --- Flask server (Render uxlab qolmasligi uchun) ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running 24/7!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
+# -----------------------------------------------------------------
+
+# 31 ta mavzu ro'yxati
 topics = [
     "Cendlar",
     "AFU, SFU, FU, SELF FU, Inside FU",
@@ -45,43 +62,41 @@ topics = [
     "Yo'nalish topish"
 ]
 
-# 3. Хэндлеры бота
-@bot.message_handler(commands=["start"])
-def start(message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row("🎓 Discord Live", "ℹ️ Ma'lumot")
-    keyboard.row("📚 Kurs haqida ma'lumot olish", "👤 Admin bilan bog'lanish")
-    
+@dp.message(Command("start"))
+async def start_handler(message: types.Message):
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🎓 Discord Live"), KeyboardButton(text="ℹ️️ Ma'lumot")],
+            [KeyboardButton(text="📚 Kurs haqida ma'lumot olish"), KeyboardButton(text="👤 Admin bilan bog'lanish")]
+        ],
+        resize_keyboard=True
+    )
     text = (
         "Assalomu alaykum! 👋\n\n"
         "🎓 <b>To'liq Bank Sistema</b> kursiga xush kelibsiz.\n\n"
         "Kerakli bo'limni tanlang."
     )
-    bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=keyboard)
+    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
 
-@bot.message_handler(func=lambda message: message.text == "🎓 Discord Live")
-def discord_live(message):
-    text = "🎓 <b>DISCORD LIVE</b>\n\n"
-    text += "📚 <b>TO'LIQ BANK SISTEMA</b>\n\n"
-    text += "Kursda quyidagi mavzular mavjud:\n\n"
-    
+@dp.message(F.text == "🎓 Discord Live")
+async def discord_live_handler(message: types.Message):
+    text = "🎓 <b>DISCORD LIVE</b>\n\n📚 <b>TO'LIQ BANK SISTEMA</b>\n\nKursda quyidagi mavzular mavjud:\n\n"
     for i, topic in enumerate(topics, 1):
         text += f"{i}. {topic}\n"
-        
     text += "\n\n📌 Kurs haqida batafsil ma'lumot olish uchun administrator bilan bog'laning."
-    bot.send_message(message.chat.id, text, parse_mode="HTML")
+    await message.answer(text, parse_mode="HTML")
 
-@bot.message_handler(func=lambda message: message.text == "ℹ️ Ma'lumot")
-def information(message):
+@dp.message(F.text == "ℹ️ Ma'lumot")
+async def info_handler(message: types.Message):
     text = (
         "ℹ️ <b>MA'LUMOT</b>\n\n"
         "🎓 To'liq Bank Sistema — trading bo'yicha 31 ta mavzuni o'z ichiga olgan kurs.\n\n"
         "Kursga ulanish va batafsil ma'lumot uchun administrator bilan bog'laning."
     )
-    bot.send_message(message.chat.id, text, parse_mode="HTML")
+    await message.answer(text, parse_mode="HTML")
 
-@bot.message_handler(func=lambda message: message.text == "📚 Kurs haqida ma'lumot olish")
-def course_info(message):
+@dp.message(F.text == "📚 Kurs haqida ma'lumot olish")
+async def course_info_handler(message: types.Message):
     text = (
         "📚 <b>KURS HAQIDA</b>\n\n"
         "🎓 <b>To'liq Bank Sistema</b>\n\n"
@@ -90,33 +105,26 @@ def course_info(message):
         "Kursga ulanish uchun administrator bilan bog'laning:\n\n"
         "👤 @laa_admin"
     )
-    bot.send_message(message.chat.id, text, parse_mode="HTML")
+    await message.answer(text, parse_mode="HTML")
 
-@bot.message_handler(func=lambda message: message.text == "👤 Admin bilan bog'lanish")
-def admin(message):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("💬 @laa_admin", url="https://t.me/laa_admin"))
-    
+@dp.message(F.text == "👤 Admin bilan bog'lanish")
+async def admin_handler(message: types.Message):
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💬 @laa_admin", url="https://t.me/laa_admin")]
+        ]
+    )
     text = (
         "👤 <b>ADMIN BILAN BOG'LANISH</b>\n\n"
         "Kurs bo'yicha batafsil ma'lumot, to'lov va ulanish masalalari uchun administratorga yozing."
     )
-    bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=keyboard)
+    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
 
-# 4. Настройка веб-сервера aiohttp для UptimeRobot
-async def handle_ping(request):
-    return web.Response(text="Bot is running!")
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    print("Bot ishga tushdi...")
+    keep_alive()
+    await dp.start_polling(bot)
 
-def run_web_server():
-    app = web.Application()
-    app.router.add_get("/", handle_ping)
-    web.run_app(app, host="0.0.0.0", port=PORT)
-
-# 5. Запуск сервера и бота
 if __name__ == "__main__":
-    # Запуск веб-сервера в отдельном потоке
-    server_thread = threading.Thread(target=run_web_server, daemon=True)
-    server_thread.start()
-
-    print("✅ Web server va Bot muvaffaqiyatli ishga tushdi...")
-    bot.infinity_polling(skip_pending=True)
+    asyncio.run(main())
