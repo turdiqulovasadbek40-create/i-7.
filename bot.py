@@ -4,9 +4,12 @@ from aiohttp import web
 import telebot
 from telebot import types
 
-# 1. Bot tokeni to'g'ridan-to'g'ri kiritildi
+# 1. Tokenni to'g'ridan-to'g'ri yozish yoki Environmentdan olish
 BOT_TOKEN = "8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynuc"
 PORT = int(os.environ.get("PORT", 10000))
+
+if not BOT_TOKEN:
+    raise ValueError("OШИБКА: Переменная BOT_TOKEN не найдена!")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -74,7 +77,7 @@ def discord_live(message):
 @bot.message_handler(func=lambda message: message.text == "ℹ️ Ma'lumot")
 def information(message):
     text = (
-        "ℹ️️ <b>MA'LUMOT</b>\n\n"
+        "ℹ️ <b>MA'LUMOT</b>\n\n"
         "🎓 To'liq Bank Sistema — trading bo'yicha 31 ta mavzuni o'z ichiga olgan kurs.\n\n"
         "Kursga ulanish va batafsil ma'lumot uchun administrator bilan bog'laning."
     )
@@ -112,7 +115,7 @@ def run_web_server():
     app.router.add_get("/", handle_ping)
     web.run_app(app, host="0.0.0.0", port=PORT)
 
-# 5. Запуск сервера и бота
+# 5. Запуск сервера и бота (TO'G'RILANDI)
 if __name__ == "__main__":
     # Запуск веб-сервера в отдельном потоке
     server_thread = threading.Thread(target=run_web_server, daemon=True)
