@@ -1,3 +1,6 @@
+from flask import Flask
+from threading import Thread
+import os
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types, F
@@ -61,6 +64,19 @@ topics = [
     "True HCS",
     "Yo'nalish topish"
 ]
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot ishlayapti!"
+
+def run():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
@@ -125,6 +141,11 @@ async def main():
     print("Bot ishga tushdi...")
     keep_alive()
     await dp.start_polling(bot)
+if __name__ == '__main__':
+    keep_alive()  # <-- Mana shu qatorni eng boshiga qo'shasiz
+    
+    # Bu yerda sizning oldingi botingizni yoqadigan kodingiz turadi 
+    # (masalan: asyncio.run(main()) yoki executor.start_polling(...) va hokazo)
 
 if __name__ == "__main__":
     asyncio.run(main())
