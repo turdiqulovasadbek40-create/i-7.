@@ -1,36 +1,65 @@
-from flask import Flask
-from threading import Thread
 import os
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask
 from threading import Thread
 
-# Bot tokeni
-TOKEN = "8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynuc"
+from flask import Flask
+
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
+
+
+# =========================================================
+# BOT TOKEN
+# =========================================================
+
+TOKEN = 8920455563:AAFiVQoxu_m7ZyZPunNsAAWJDfeZ5mtynucos.environ.get("BOT_TOKEN")
+
+if not TOKEN:
+    raise ValueError("BOT_TOKEN Render Environment Variables'da topilmadi!")
+
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# --- Flask server (Render uxlab qolmasligi uchun) ---
-app = Flask('')
 
-@app.route('/')
+# =========================================================
+# FLASK SERVER - RENDER UCHUN
+# =========================================================
+
+app = Flask(__name__)
+
+
+@app.route("/")
 def home():
-    return "Bot is running 24/7!"
+    return "Bot ishlayapti!"
+
 
 def run_web():
-    app.run(host='0.0.0.0', port=8080)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        use_reloader=False
+    )
+
 
 def keep_alive():
-    t = Thread(target=run_web)
-    t.start()
-# -----------------------------------------------------------------
+    thread = Thread(target=run_web, daemon=True)
+    thread.start()
 
-# 31 ta mavzu ro'yxati
+
+# =========================================================
+# 31 TA MAVZU
+# =========================================================
+
 topics = [
     "Cendlar",
     "AFU, SFU, FU, SELF FU, Inside FU",
@@ -64,55 +93,98 @@ topics = [
     "True HCS",
     "Yo'nalish topish"
 ]
-app = Flask('')
 
-@app.route('/')
-def home():
-    return "Bot ishlayapti!"
 
-def run():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
+# =========================================================
+# /START
+# =========================================================
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
+
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🎓 Discord Live"), KeyboardButton(text="ℹ️️ Ma'lumot")],
-            [KeyboardButton(text="📚 Kurs haqida ma'lumot olish"), KeyboardButton(text="👤 Admin bilan bog'lanish")]
+            [
+                KeyboardButton(text="🎓 Discord Live"),
+                KeyboardButton(text="ℹ️ Ma'lumot")
+            ],
+            [
+                KeyboardButton(text="📚 Kurs haqida ma'lumot olish"),
+                KeyboardButton(text="👤 Admin bilan bog'lanish")
+            ]
         ],
         resize_keyboard=True
     )
+
     text = (
         "Assalomu alaykum! 👋\n\n"
         "🎓 <b>To'liq Bank Sistema</b> kursiga xush kelibsiz.\n\n"
         "Kerakli bo'limni tanlang."
     )
-    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
+
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+
+# =========================================================
+# DISCORD LIVE
+# =========================================================
 
 @dp.message(F.text == "🎓 Discord Live")
 async def discord_live_handler(message: types.Message):
-    text = "🎓 <b>DISCORD LIVE</b>\n\n📚 <b>TO'LIQ BANK SISTEMA</b>\n\nKursda quyidagi mavzular mavjud:\n\n"
+
+    text = (
+        "🎓 <b>DISCORD LIVE</b>\n\n"
+        "📚 <b>TO'LIQ BANK SISTEMA</b>\n\n"
+        "Kursda quyidagi mavzular mavjud:\n\n"
+    )
+
     for i, topic in enumerate(topics, 1):
         text += f"{i}. {topic}\n"
-    text += "\n\n📌 Kurs haqida batafsil ma'lumot olish uchun administrator bilan bog'laning."
-    await message.answer(text, parse_mode="HTML")
+
+    text += (
+        "\n\n"
+        "📌 Kurs haqida batafsil ma'lumot olish uchun "
+        "administrator bilan bog'laning."
+    )
+
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
+
+
+# =========================================================
+# MA'LUMOT
+# =========================================================
 
 @dp.message(F.text == "ℹ️ Ma'lumot")
 async def info_handler(message: types.Message):
+
     text = (
         "ℹ️ <b>MA'LUMOT</b>\n\n"
-        "🎓 To'liq Bank Sistema — trading bo'yicha 31 ta mavzuni o'z ichiga olgan kurs.\n\n"
-        "Kursga ulanish va batafsil ma'lumot uchun administrator bilan bog'laning."
+        "🎓 To'liq Bank Sistema — trading bo'yicha "
+        "31 ta mavzuni o'z ichiga olgan kurs.\n\n"
+        "Kursga ulanish va batafsil ma'lumot uchun "
+        "administrator bilan bog'laning."
     )
-    await message.answer(text, parse_mode="HTML")
+
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
+
+
+# =========================================================
+# KURS HAQIDA
+# =========================================================
 
 @dp.message(F.text == "📚 Kurs haqida ma'lumot olish")
 async def course_info_handler(message: types.Message):
+
     text = (
         "📚 <b>KURS HAQIDA</b>\n\n"
         "🎓 <b>To'liq Bank Sistema</b>\n\n"
@@ -121,31 +193,64 @@ async def course_info_handler(message: types.Message):
         "Kursga ulanish uchun administrator bilan bog'laning:\n\n"
         "👤 @laa_admin"
     )
-    await message.answer(text, parse_mode="HTML")
+
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
+
+
+# =========================================================
+# ADMIN BILAN BOG'LANISH
+# =========================================================
 
 @dp.message(F.text == "👤 Admin bilan bog'lanish")
 async def admin_handler(message: types.Message):
+
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="💬 @laa_admin", url="https://t.me/laa_admin")]
+            [
+                InlineKeyboardButton(
+                    text="💬 @laa_admin",
+                    url="https://t.me/laa_admin"
+                )
+            ]
         ]
     )
+
     text = (
         "👤 <b>ADMIN BILAN BOG'LANISH</b>\n\n"
-        "Kurs bo'yicha batafsil ma'lumot, to'lov va ulanish masalalari uchun administratorga yozing."
+        "Kurs bo'yicha batafsil ma'lumot, to'lov va "
+        "ulanish masalalari uchun administratorga yozing."
     )
-    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
+
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+
+# =========================================================
+# BOTNI ISHGA TUSHIRISH
+# =========================================================
 
 async def main():
+
     logging.basicConfig(level=logging.INFO)
+
     print("Bot ishga tushdi...")
+
+    # Flask serverni faqat BIR MARTA ishga tushiramiz
     keep_alive()
+
+    # Telegram polling faqat BIR MARTA
     await dp.start_polling(bot)
-if __name__ == '__main__':
-    keep_alive()  # <-- Mana shu qatorni eng boshiga qo'shasiz
-    
-    # Bu yerda sizning oldingi botingizni yoqadigan kodingiz turadi 
-    # (masalan: asyncio.run(main()) yoki executor.start_polling(...) va hokazo)
+
+
+# =========================================================
+# MAIN
+# =========================================================
 
 if __name__ == "__main__":
     asyncio.run(main())
